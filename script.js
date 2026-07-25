@@ -788,3 +788,77 @@ injectDarkModeStyles();
 injectInterfacePolishStyles();
 buildGpsPanel();
 buildDarkModeToggle();
+
+// ===========================================
+// BUILDING NAME LABELS
+// (display-only — no editing/dragging/adding)
+// ===========================================
+
+function typeColor(type) {
+    switch (type) {
+        case "gate": return "#22c55e";
+        case "academic": return "#2563eb";
+        case "canteen": return "#f97316";
+        case "sports": return "#eab308";
+        case "admin": return "#8b5cf6";
+        case "parking": return "#64748b";
+        case "pg": return "#ec4899";
+        default: return "#ef4444";
+    }
+}
+
+function injectLabelStyles() {
+    if (document.getElementById("campusLabelStyles")) return;
+
+    const style = document.createElement("style");
+    style.id = "campusLabelStyles";
+    style.textContent = `
+        .campus-building-label {
+            display: inline-block;
+            background: white;
+            color: #1f2430;
+            padding: 4px 10px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+            transform: translate(-50%, -130%);
+            cursor: pointer;
+        }
+        body.dark-mode .campus-building-label {
+            background: #1c1f26;
+            color: #f2f2f2;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.55);
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+function buildingLabelIcon(name, type) {
+    const color = typeColor(type);
+    return L.divIcon({
+        className: "",
+        html: `<div class="campus-building-label" style="border-left:4px solid ${color};">${name}</div>`,
+        iconSize: [1, 1],
+        iconAnchor: [0, 0]
+    });
+}
+
+function applyBuildingLabels() {
+    map.eachLayer(layer => {
+        if (!(layer instanceof L.Marker)) return;
+        const latlng = layer.getLatLng();
+        for (let name in buildings) {
+            const b = buildings[name];
+            if (Math.abs(latlng.lat - b.coords[0]) < 1e-9 &&
+                Math.abs(latlng.lng - b.coords[1]) < 1e-9) {
+                layer.setIcon(buildingLabelIcon(name, b.type));
+                break;
+            }
+        }
+    });
+}
+
+injectLabelStyles();
+applyBuildingLabels();

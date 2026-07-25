@@ -13,6 +13,11 @@ const lightTileLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{
     maxZoom: 22
 }).addTo(map);
 
+const darkTileLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+    attribution: "&copy; OpenStreetMap Contributors &copy; CARTO",
+    maxZoom: 22
+});
+
 // ==========================
 // Buildings
 // ==========================
@@ -232,61 +237,45 @@ const buildingToRoad = {
     "Library": "J16"
 };
 
-function getBuildingIcon(type) {
-
-    let iconHTML = "";
-
-    switch (type) {
-
-        case "gate":
-            iconHTML = '<i class="fa-solid fa-door-open fa-2x" style="color:#22c55e;"></i>';
-            break;
-
-        case "academic":
-            iconHTML = '<i class="fa-solid fa-building-columns fa-2x" style="color:#2563eb;"></i>';
-            break;
-
-        case "canteen":
-            iconHTML = '<i class="fa-solid fa-utensils fa-2x" style="color:#f97316;"></i>';
-            break;
-
-        case "sports":
-            iconHTML = '<i class="fa-solid fa-football fa-2x" style="color:#eab308;"></i>';
-            break;
-
-        case "admin":
-            iconHTML = '<i class="fa-solid fa-building fa-2x" style="color:#8b5cf6;"></i>';
-            break;
-
-        case "parking":
-            iconHTML = '<i class="fa-solid fa-square-parking fa-2x" style="color:#64748b;"></i>';
-            break;
-
-        case "pg":
-            iconHTML = '<i class="fa-solid fa-user-graduate fa-2x" style="color:#ec4899;"></i>';
-            break;
-
-        default:
-            iconHTML = '<i class="fa-solid fa-location-dot fa-2x" style="color:#ef4444;"></i>';
-    }
-
-    return L.divIcon({
-        html: iconHTML,
-        className: "",
-        iconSize: [30, 30],
-        iconAnchor: [15, 30]
-    });
-
-}
+const buildingZoom = {
+    "A Block": 17,
+    "B Block": 17,
+    "C Block": 17,
+    "D Block": 17,
+    "E Block": 17,
+    "Library": 17,
+    "Admin Block": 18,
+    "Management Block": 18,
+    "PEB Block": 18,
+    "Canteen": 18,
+    "Sports Complex": 18,
+    "Bus Parking": 19,
+    "Student Parking": 19,
+    "Main Gate": 19,
+    "Play ground": 19,
+    "Mens Basketball Court": 19,
+    "Rattaiah Square": 20,
+    "Panda Punaiah Square": 20
+};
 
 // ==========================
 // Add Building Markers
+// (no default/Font Awesome icon — the marker is
+// just an invisible anchor point; only the name
+// label tooltip added further down is visible)
 // ==========================
+
+const invisibleMarkerIcon = L.divIcon({
+    className: "",
+    html: "",
+    iconSize: [1, 1],
+    iconAnchor: [0, 0]
+});
 
 for (let place in buildings) {
 
     L.marker(buildings[place].coords, {
-        icon: getBuildingIcon(buildings[place].type)
+        icon: invisibleMarkerIcon
     })
         .addTo(map)
         .bindPopup(`<b>${place}</b><br>${buildings[place].info}`);
@@ -524,6 +513,109 @@ function findRoute() {
 // longer editable from the UI.
 // ===========================================
 
+// ===========================================
+// DARK MODE
+// ===========================================
+
+let darkMode = false;
+
+function injectDarkModeStyles() {
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        body.dark-mode {
+            background:#0f1115;
+        }
+
+        body.dark-mode #gpsPanel {
+            background:#1c1f26 !important;
+            color:#eee !important;
+            box-shadow:0 4px 14px rgba(0,0,0,0.55) !important;
+        }
+
+        body.dark-mode #gpsPanel:hover {
+            background:#252932 !important;
+        }
+
+        body.dark-mode #darkModeToggleBtn {
+            background:#1c1f26 !important;
+            color:#f2f2f2 !important;
+            border:1px solid #333844 !important;
+        }
+
+        body.dark-mode select,
+        body.dark-mode #source,
+        body.dark-mode #destination {
+            background:#1c1f26 !important;
+            color:#f2f2f2 !important;
+            border:1px solid #333844 !important;
+        }
+
+        body.dark-mode button {
+            background:#242833 !important;
+            color:#f2f2f2 !important;
+            border:1px solid #333844 !important;
+        }
+
+        body.dark-mode button:hover {
+            background:#2f3542 !important;
+        }
+
+        body.dark-mode #result {
+            background:#1c1f26 !important;
+            color:#eee !important;
+            box-shadow:0 4px 14px rgba(0,0,0,0.5) !important;
+        }
+
+        body.dark-mode .route-box {
+            background:#20232b !important;
+        }
+
+        body.dark-mode .route-detail {
+            border-bottom:1px solid #2c2f38 !important;
+        }
+
+        body.dark-mode .route-label {
+            color:#9aa3b2 !important;
+        }
+
+        body.dark-mode .route-value {
+            color:#f2f2f2 !important;
+        }
+
+        body.dark-mode .leaflet-popup-content-wrapper,
+        body.dark-mode .leaflet-popup-tip {
+            background:#1c1f26 !important;
+            color:#eee !important;
+        }
+
+        body.dark-mode .leaflet-control-zoom a {
+            background:#1c1f26 !important;
+            color:#f2f2f2 !important;
+            border-color:#333844 !important;
+        }
+    `;
+
+    document.head.appendChild(style);
+
+}
+
+function toggleDarkMode() {
+
+    darkMode = !darkMode;
+
+    if (darkMode) {
+        map.removeLayer(lightTileLayer);
+        darkTileLayer.addTo(map);
+        document.body.classList.add("dark-mode");
+    } else {
+        map.removeLayer(darkTileLayer);
+        lightTileLayer.addTo(map);
+        document.body.classList.remove("dark-mode");
+    }
+
+}
 
 // ===========================================
 // GPS LOCATION
@@ -657,22 +749,35 @@ function injectInterfacePolishStyles() {
 }
 
 // ===========================================
-// BUILDING NAME LABELS
-// (display-only — no editing/dragging/adding)
+// DARK MODE TOGGLE (floating button)
 // ===========================================
 
-function typeColor(type) {
-    switch (type) {
-        case "gate": return "#22c55e";
-        case "academic": return "#2563eb";
-        case "canteen": return "#f97316";
-        case "sports": return "#eab308";
-        case "admin": return "#8b5cf6";
-        case "parking": return "#64748b";
-        case "pg": return "#ec4899";
-        default: return "#ef4444";
-    }
+function buildDarkModeToggle() {
+
+    const btn = document.createElement("button");
+    btn.id = "darkModeToggleBtn";
+    btn.title = "Toggle dark mode";
+    btn.textContent = "🌙";
+
+    btn.addEventListener("click", () => {
+        toggleDarkMode();
+        btn.textContent = darkMode ? "☀️" : "🌙";
+    });
+
+    document.body.appendChild(btn);
+
 }
+
+injectDarkModeStyles();
+injectInterfacePolishStyles();
+buildGpsPanel();
+buildDarkModeToggle();
+
+// ===========================================
+// BUILDING NAME LABELS
+// (display-only — Leaflet tooltips, shown/hidden
+// per building based on buildingZoom thresholds)
+// ===========================================
 
 function injectLabelStyles() {
     if (document.getElementById("campusLabelStyles")) return;
@@ -681,7 +786,6 @@ function injectLabelStyles() {
     style.id = "campusLabelStyles";
     style.textContent = `
         .campus-building-label {
-            display: inline-block;
             background: white;
             color: #1f2430;
             padding: 4px 10px;
@@ -690,29 +794,16 @@ function injectLabelStyles() {
             font-weight: 600;
             white-space: nowrap;
             box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-            transform: translate(-50%, -130%);
-            cursor: pointer;
+            border: none;
         }
-        body.dark-mode .campus-building-label {
-            background: #1c1f26;
-            color: #f2f2f2;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.55);
+        .campus-building-label::before {
+            display: none;
         }
     `;
     document.head.appendChild(style);
 }
 
-function buildingLabelIcon(name, type) {
-    const color = typeColor(type);
-    return L.divIcon({
-        className: "",
-        html: `<div class="campus-building-label" style="border-left:4px solid ${color};">${name}</div>`,
-        iconSize: [1, 1],
-        iconAnchor: [0, 0]
-    });
-}
-
-function applyBuildingLabels() {
+function bindBuildingTooltips() {
     map.eachLayer(layer => {
         if (!(layer instanceof L.Marker)) return;
         const latlng = layer.getLatLng();
@@ -720,12 +811,37 @@ function applyBuildingLabels() {
             const b = buildings[name];
             if (Math.abs(latlng.lat - b.coords[0]) < 1e-9 &&
                 Math.abs(latlng.lng - b.coords[1]) < 1e-9) {
-                layer.setIcon(buildingLabelIcon(name, b.type));
+                layer.bindTooltip(name, {
+                    permanent: false,
+                    direction: "top",
+                    className: "campus-building-label",
+                    offset: [0, -28]
+                });
                 break;
             }
         }
     });
 }
 
-injectInterfacePolishStyles();
-buildGpsPanel();
+function updateLabels() {
+    const zoom = map.getZoom();
+    map.eachLayer(layer => {
+        if (!(layer instanceof L.Marker)) return;
+        const tooltip = layer.getTooltip();
+        if (!tooltip) return;
+        // buildingZoom keys don't carry the trailing spaces some
+        // `buildings` names have ("Play ground ", "Rattaiah Square "),
+        // so trim before lookup or those two never match.
+        const building = tooltip.getContent().trim();
+        if (zoom >= buildingZoom[building]) {
+            layer.openTooltip();
+        } else {
+            layer.closeTooltip();
+        }
+    });
+}
+
+injectLabelStyles();
+bindBuildingTooltips();
+updateLabels();
+map.on("zoomend", updateLabels);

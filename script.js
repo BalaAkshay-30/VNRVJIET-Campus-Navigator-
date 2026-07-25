@@ -13,11 +13,6 @@ const lightTileLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{
     maxZoom: 22
 }).addTo(map);
 
-const darkTileLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-    attribution: "&copy; OpenStreetMap Contributors &copy; CARTO",
-    maxZoom: 22
-});
-
 // ==========================
 // Buildings
 // ==========================
@@ -529,109 +524,6 @@ function findRoute() {
 // longer editable from the UI.
 // ===========================================
 
-// ===========================================
-// DARK MODE
-// ===========================================
-
-let darkMode = false;
-
-function injectDarkModeStyles() {
-
-    const style = document.createElement("style");
-
-    style.textContent = `
-        body.dark-mode {
-            background:#0f1115;
-        }
-
-        body.dark-mode #gpsPanel {
-            background:#1c1f26 !important;
-            color:#eee !important;
-            box-shadow:0 4px 14px rgba(0,0,0,0.55) !important;
-        }
-
-        body.dark-mode #gpsPanel:hover {
-            background:#252932 !important;
-        }
-
-        body.dark-mode #darkModeToggleBtn {
-            background:#1c1f26 !important;
-            color:#f2f2f2 !important;
-            border:1px solid #333844 !important;
-        }
-
-        body.dark-mode select,
-        body.dark-mode #source,
-        body.dark-mode #destination {
-            background:#1c1f26 !important;
-            color:#f2f2f2 !important;
-            border:1px solid #333844 !important;
-        }
-
-        body.dark-mode button {
-            background:#242833 !important;
-            color:#f2f2f2 !important;
-            border:1px solid #333844 !important;
-        }
-
-        body.dark-mode button:hover {
-            background:#2f3542 !important;
-        }
-
-        body.dark-mode #result {
-            background:#1c1f26 !important;
-            color:#eee !important;
-            box-shadow:0 4px 14px rgba(0,0,0,0.5) !important;
-        }
-
-        body.dark-mode .route-box {
-            background:#20232b !important;
-        }
-
-        body.dark-mode .route-detail {
-            border-bottom:1px solid #2c2f38 !important;
-        }
-
-        body.dark-mode .route-label {
-            color:#9aa3b2 !important;
-        }
-
-        body.dark-mode .route-value {
-            color:#f2f2f2 !important;
-        }
-
-        body.dark-mode .leaflet-popup-content-wrapper,
-        body.dark-mode .leaflet-popup-tip {
-            background:#1c1f26 !important;
-            color:#eee !important;
-        }
-
-        body.dark-mode .leaflet-control-zoom a {
-            background:#1c1f26 !important;
-            color:#f2f2f2 !important;
-            border-color:#333844 !important;
-        }
-    `;
-
-    document.head.appendChild(style);
-
-}
-
-function toggleDarkMode() {
-
-    darkMode = !darkMode;
-
-    if (darkMode) {
-        map.removeLayer(lightTileLayer);
-        darkTileLayer.addTo(map);
-        document.body.classList.add("dark-mode");
-    } else {
-        map.removeLayer(darkTileLayer);
-        lightTileLayer.addTo(map);
-        document.body.classList.remove("dark-mode");
-    }
-
-}
 
 // ===========================================
 // GPS LOCATION
@@ -765,31 +657,6 @@ function injectInterfacePolishStyles() {
 }
 
 // ===========================================
-// DARK MODE TOGGLE (floating button)
-// ===========================================
-
-function buildDarkModeToggle() {
-
-    const btn = document.createElement("button");
-    btn.id = "darkModeToggleBtn";
-    btn.title = "Toggle dark mode";
-    btn.textContent = "🌙";
-
-    btn.addEventListener("click", () => {
-        toggleDarkMode();
-        btn.textContent = darkMode ? "☀️" : "🌙";
-    });
-
-    document.body.appendChild(btn);
-
-}
-
-injectDarkModeStyles();
-injectInterfacePolishStyles();
-buildGpsPanel();
-buildDarkModeToggle();
-
-// ===========================================
 // BUILDING NAME LABELS
 // (display-only — no editing/dragging/adding)
 // ===========================================
@@ -860,5 +727,5 @@ function applyBuildingLabels() {
     });
 }
 
-injectLabelStyles();
-applyBuildingLabels();
+injectInterfacePolishStyles();
+buildGpsPanel();

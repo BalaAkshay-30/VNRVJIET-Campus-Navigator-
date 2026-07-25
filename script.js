@@ -1,0 +1,1406 @@
+// ===========================================
+// VNRVJIET Smart Campus Navigator
+// (with integrated Junction Editor)
+// ===========================================
+
+// ==========================
+// Create Map
+// ==========================
+
+const map = L.map("map").setView([17.538668, 78.385446], 19);
+
+const lightTileLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap Contributors",
+    maxZoom: 22
+}).addTo(map);
+
+const darkTileLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+    attribution: "&copy; OpenStreetMap Contributors &copy; CARTO",
+    maxZoom: 22
+});
+
+// ==========================
+// Buildings
+// ==========================
+// FIX: these four `const` declarations used to be wrapped in a stray
+// `{ ... }` block. That turns them into block-scoped bindings that vanish
+// as soon as the block ends — every later reference to `buildings`,
+// `junctions`, `roadGraph`, and `buildingToRoad` (findRoute, dijkstra,
+// the editor IIFE, etc.) would throw "ReferenceError: buildings is not
+// defined". The wrapping braces have been removed so these stay in
+// module/global scope for the rest of the script.
+
+const buildings = {
+    "Main Gate": {
+        "coords": [17.541547154956778, 78.3867861008402],
+        "info": "Main Entrance",
+        "type": "gate"
+    },
+    "Bus Parking": {
+        "coords": [17.539150777856058, 78.3863032358324],
+        "info": "College Bus Parking",
+        "type": "parking"
+    },
+    "Sports Complex": {
+        "coords": [17.54058042393002, 78.38565410940035],
+        "info": "Indoor Sports Complex",
+        "type": "sports"
+    },
+    "Management Block": {
+        "coords": [17.54110726740397, 78.38602427828117],
+        "info": "Management Block",
+        "type": "academic"
+    },
+    "Admin Block": {
+        "coords": [17.536506073141094, 78.38491052364165],
+        "info": "Administrative Block",
+        "type": "academic"
+    },
+    "A Block": {
+        "coords": [17.53737329519014, 78.38481725071168],
+        "info": "Academic Block A",
+        "type": "academic"
+    },
+    "B Block": {
+        "coords": [17.537672527304895, 78.3848494460025],
+        "info": "Academic Block B",
+        "type": "academic"
+    },
+    "C Block": {
+        "coords": [17.537915493188617, 78.38506401555891],
+        "info": "Academic Block C",
+        "type": "academic"
+    },
+    "Canteen": {
+        "coords": [17.538365085908858, 78.38479484963928],
+        "info": "Student Canteen",
+        "type": "canteen"
+    },
+    "E Block": {
+        "coords": [17.5372, 78.38535],
+        "info": "CSE Departments",
+        "type": "academic"
+    },
+    "D Block": {
+        "coords": [17.53665302604159, 78.3850534160283],
+        "info": "Civil, Mechanical & Automobile",
+        "type": "academic"
+    },
+    "PG Block": {
+        "coords": [17.536855498746466, 78.38434211839447],
+        "info": "Post Graduate Block",
+        "type": "academic"
+    },
+    "Rattaiah Square ": {
+        "coords": [17.537450021420497, 78.38472874128101],
+        "info": "Hangout place ",
+        "type": "other"
+    },
+    "Panda Punaiah Square": {
+        "coords": [17.537956413726477, 78.38505866084803],
+        "info": "Hangout spot",
+        "type": "other"
+    },
+    "Mens Basketball Court": {
+        "coords": [17.538626486219894, 78.38527324496515],
+        "info": "Mens Basketball Court",
+        "type": "sports"
+    },
+    "Play ground ": {
+        "coords": [17.53962050782601, 78.38545280575003],
+        "info": "Play ground ",
+        "type": "sports"
+    },
+    "Student Parking": {
+        "coords": [17.540203619134296, 78.38584444201008],
+        "info": "Student Parking",
+        "type": "parking"
+    },
+    "PEB Block": {
+        "coords": [17.540786728566868, 78.38642921396007],
+        "info": "PEB Block",
+        "type": "academic"
+    },
+    "Library": {
+        "coords": [17.538171246398676, 78.3848816253459],
+        "info": "Library",
+        "type": "academic"
+    }
+};
+
+const junctions = {
+    "J1": [17.541339998742213, 78.38678332193798],
+    "J2": [17.540751776101697, 78.3867135636472],
+    "J3": [17.54027352411319, 78.38663041591646],
+    "J4": [17.541396263416505, 78.38633269025355],
+    "J5": [17.54109447995914, 78.38628709177581],
+    "J6": [17.540738988631794, 78.38624963376088],
+    "J7": [17.540800368479115, 78.38577748269464],
+    "J8": [17.540593211411107, 78.38564600013908],
+    "J9": [17.54020958658595, 78.38616636532878],
+    "J10": [17.540114959004267, 78.3865580385685],
+    "J11": [17.539941048725307, 78.38650711103448],
+    "J12": [17.539869438561933, 78.38646958599398],
+    "J13": [17.53951905985483, 78.38613697543533],
+    "J14": [17.53917891053513, 78.38574794603828],
+    "J15": [17.538918043707156, 78.3854234246332],
+    "J16": [17.53828122016807, 78.38519812208055],
+    "J17": [17.537872015107023, 78.38510691472457],
+    "J18": [17.537516517460524, 78.38500499702229],
+    "J19": [17.537097933033195, 78.38485864641218],
+    "J20": [17.53704166702484, 78.38466819316241],
+    "J21": [17.53673646622508, 78.38462680924916],
+    "J22": [17.53671430081176, 78.38474866636656]
+};
+
+// FIX (confirmed against the campus map images): the green route on the
+// map runs continuously Library(J16) -> C Block -> B Block(J17) ->
+// A Block(J18) -> Silicon Bhavan(J19) -> PG Block(J20) -> Admin/D
+// Block(J22), but the graph was missing the J17<->J18 and J18<->J19
+// links, which is exactly why the J19/J20/J21/J22 cluster was
+// unreachable from the rest of campus. Both edges are added below.
+// J21 still has no edges and isn't referenced by any building or
+// visible on the maps, so it's left disconnected as-is.
+
+const roadGraph = {
+    "J1": ["J2", "J4"],
+    "J2": ["J1", "J3"],
+    "J3": ["J2", "J10"],
+    "J4": ["J1", "J5"],
+    "J5": ["J4", "J6"],
+    "J6": ["J5", "J7", "J9"],
+    "J7": ["J6", "J8"],
+    "J8": ["J6", "J9"],
+    "J9": ["J3", "J8", "J10"],
+    "J10": ["J3","J9", "J11"],
+    "J11": ["J10", "J12"],
+    "J12": ["J11", "J13"],
+    "J13": ["J12", "J14"],
+    "J14": ["J13", "J15"],
+    "J15": ["J14", "J16"],
+    "J16": ["J15", "J17"],
+    "J17": ["J16", "J18"],
+    "J18": ["J17", "J19"],
+    "J19": ["J18", "J20", "J22"],
+    "J20": ["J19","J21"],
+    "J21": ["J20"],
+    "J22": ["J19"]
+};
+
+// FIX: two keys here didn't match the corresponding `buildings` keys, so
+// selecting either building as source/destination made
+// `buildingToRoad[source]` come back `undefined`, which then crashed
+// findRoute() (e.g. `junctions[undefined]` / dijkstra with an undefined
+// start node):
+//   - "PEB BLock"  -> corrected to "PEB Block"  (matches buildings key)
+//   - "Library "   -> corrected to "Library"    (matches buildings key,
+//                      no trailing space)
+//
+// FIX (checked against the campus map images): several buildings were
+// pointing at a junction nowhere near their actual pin on the map —
+// corrected to the nearest junction shown in the images:
+//   - Management Block: J5  -> J4  (J4 sits right on the building; J5 is
+//                                    off toward PEB Block)
+//   - PG Block:         J16 -> J20 (J16 is by the Library, far away)
+//   - Admin Block:      J17 -> J22 (J17 is by B Block; J22 is the
+//                                    Admin/D Block/Civil Workshop cluster)
+//   - D Block:           J17 -> J22 (same cluster as Admin Block)
+//   - B Block:            J18 -> J17 (J17 is the junction right next to
+//                                    B Block; J18 belongs to A Block)
+//   - Canteen:            J12 -> J16 (J12 is up by the bus stop; Canteen
+//                                    sits next to the Library)
+//   - Bus Parking:        J10 -> J13 (J10 is the bus-stop cluster; J13
+//                                    sits right above the Bus Parking pin)
+//   - E Block:            J14 -> J18 (best estimate — E Block sits in the
+//                                    same row as A Block/Instrumentation
+//                                    Workshop, not near the institute gate
+//                                    where J14 is; lower confidence than
+//                                    the others, worth a visual double-check)
+const buildingToRoad = {
+    "Main Gate": "J1",
+    "Sports Complex": "J8",
+    "B Block": "J17",
+    "PG Block": "J21",
+    "D Block": "J22",
+    "Bus Parking": "J13",
+    "Management Block": "J5",
+    "Admin Block": "J22",
+    "A Block": "J18",
+    "C Block": "J17",
+    "Canteen": "J16",
+    "E Block": "J18",
+    "Rattaiah Square ": "J18",
+    "Panda Punaiah Square": "J17",
+    "Mens Basketball Court": "J15",
+    "Play ground ": "J14",
+    "Student Parking": "J9",
+    "PEB Block": "J5",
+    "Library": "J16"
+};
+
+function getBuildingIcon(type) {
+
+    let iconHTML = "";
+
+    switch (type) {
+
+        case "gate":
+            iconHTML = '<i class="fa-solid fa-door-open fa-2x" style="color:#22c55e;"></i>';
+            break;
+
+        case "academic":
+            iconHTML = '<i class="fa-solid fa-building-columns fa-2x" style="color:#2563eb;"></i>';
+            break;
+
+        case "canteen":
+            iconHTML = '<i class="fa-solid fa-utensils fa-2x" style="color:#f97316;"></i>';
+            break;
+
+        case "sports":
+            iconHTML = '<i class="fa-solid fa-football fa-2x" style="color:#eab308;"></i>';
+            break;
+
+        case "admin":
+            iconHTML = '<i class="fa-solid fa-building fa-2x" style="color:#8b5cf6;"></i>';
+            break;
+
+        case "parking":
+            iconHTML = '<i class="fa-solid fa-square-parking fa-2x" style="color:#64748b;"></i>';
+            break;
+
+        case "pg":
+            iconHTML = '<i class="fa-solid fa-user-graduate fa-2x" style="color:#ec4899;"></i>';
+            break;
+
+        default:
+            iconHTML = '<i class="fa-solid fa-location-dot fa-2x" style="color:#ef4444;"></i>';
+    }
+
+    return L.divIcon({
+        html: iconHTML,
+        className: "",
+        iconSize: [30, 30],
+        iconAnchor: [15, 30]
+    });
+
+}
+
+// ==========================
+// Add Building Markers
+// ==========================
+
+for (let place in buildings) {
+
+    L.marker(buildings[place].coords, {
+        icon: getBuildingIcon(buildings[place].type)
+    })
+        .addTo(map)
+        .bindPopup(`<b>${place}</b><br>${buildings[place].info}`);
+
+}
+
+// ==========================
+// Populate Dropdowns
+// ==========================
+
+const source = document.getElementById("source");
+const destination = document.getElementById("destination");
+
+source.innerHTML = "";
+destination.innerHTML = "";
+
+for (let place in buildings) {
+
+    source.innerHTML += `<option value="${place}">${place}</option>`;
+    destination.innerHTML += `<option value="${place}">${place}</option>`;
+
+}
+
+source.selectedIndex = 0;
+destination.selectedIndex = 1;
+
+// ===========================================
+// Distance Function (Haversine Formula)
+// ===========================================
+
+function getJunctionDistance(j1, j2) {
+
+    const lat1 = junctions[j1][0] * Math.PI / 180;
+    const lon1 = junctions[j1][1] * Math.PI / 180;
+
+    const lat2 = junctions[j2][0] * Math.PI / 180;
+    const lon2 = junctions[j2][1] * Math.PI / 180;
+
+    const dLat = lat2 - lat1;
+    const dLon = lon2 - lon1;
+
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1) *
+        Math.cos(lat2) *
+        Math.sin(dLon / 2) ** 2;
+
+    const c = 2 * Math.atan2(
+        Math.sqrt(a),
+        Math.sqrt(1 - a)
+    );
+
+    return 6371000 * c;
+
+}
+
+// ===========================================
+// Dijkstra Shortest Path Algorithm
+// ===========================================
+
+function dijkstra(start, end) {
+
+    let distances = {};
+    let previous = {};
+    let unvisited = [];
+
+    for (let place in roadGraph) {
+        distances[place] = Infinity;
+        previous[place] = null;
+        unvisited.push(place);
+    }
+
+    distances[start] = 0;
+
+    while (unvisited.length > 0) {
+
+        unvisited.sort((a, b) => distances[a] - distances[b]);
+
+        const current = unvisited.shift();
+
+        if (distances[current] === Infinity) break;
+
+        if (current === end) break;
+
+        roadGraph[current].forEach(neighbour => {
+
+            const newDistance =
+                distances[current] +
+                getJunctionDistance(current, neighbour);
+
+            if (newDistance < distances[neighbour]) {
+                distances[neighbour] = newDistance;
+                previous[neighbour] = current;
+            }
+
+        });
+
+    }
+
+    let path = [];
+    let current = end;
+
+    if (distances[end] !== Infinity) {
+        while (current !== null) {
+            path.unshift(current);
+            current = previous[current];
+        }
+    }
+
+    return {
+        path: path,
+        distance: distances[end]
+    };
+
+}
+
+// ===========================================
+// Validate Road Graph
+// Warns in console about one-way / missing links
+// that silently cause routes to skip junctions.
+// ===========================================
+
+function validateRoadGraph() {
+    for (let node in roadGraph) {
+        roadGraph[node].forEach(neighbor => {
+            if (!roadGraph[neighbor] || !roadGraph[neighbor].includes(node)) {
+                console.warn(`Asymmetric edge: ${node} -> ${neighbor} missing reverse link`);
+            }
+        });
+    }
+}
+validateRoadGraph();
+
+// ===========================================
+// Draw Route
+// ===========================================
+
+let routeLine = null;
+
+function findRoute() {
+
+    const source = document.getElementById("source").value;
+    const destination = document.getElementById("destination").value;
+
+    if (source === destination) {
+        alert("Please select different locations.");
+        return;
+    }
+
+    const startRoad = buildingToRoad[source];
+    const endRoad = buildingToRoad[destination];
+
+    let coordinates = [];
+    coordinates.push(buildings[source].coords);
+
+    let pathForDisplay = [];
+    let pathDistance = 0;
+
+    if (startRoad === endRoad) {
+
+        coordinates.push(junctions[startRoad]);
+        pathForDisplay = [startRoad];
+
+    } else {
+
+        const result = dijkstra(startRoad, endRoad);
+
+        if (!result.path.length || result.distance === Infinity) {
+            alert("No path found between these locations. Check roadGraph connectivity (see console warnings).");
+            return;
+        }
+
+        result.path.forEach(j => coordinates.push(junctions[j]));
+        pathForDisplay = result.path;
+        pathDistance = result.distance;
+
+    }
+
+    coordinates.push(buildings[destination].coords);
+
+    if (routeLine) {
+        map.removeLayer(routeLine);
+    }
+
+    routeLine = L.polyline(coordinates, {
+        color: "#0b8f47",
+        weight: 6,
+        opacity: 0.9
+    }).addTo(map);
+
+    map.fitBounds(routeLine.getBounds(), {
+        padding: [40, 40]
+    });
+
+    const walkingTime = Math.ceil(pathDistance / 80);
+
+    document.getElementById("result").innerHTML = `
+        <h2><i class="fa-solid fa-route"></i> Shortest Route</h2>
+        <div class="route-box">
+            <div class="route-detail">
+                <span class="route-icon">📍</span>
+                <span class="route-label">Source</span>
+                <span class="route-value">${source}</span>
+            </div>
+            <div class="route-detail">
+                <span class="route-icon">🎯</span>
+                <span class="route-label">Destination</span>
+                <span class="route-value">${destination}</span>
+            </div>
+            <div class="route-detail">
+                <span class="route-icon">🧭</span>
+                <span class="route-label">Route</span>
+                <span class="route-value">${pathForDisplay.join(" ➜ ")}</span>
+            </div>
+            <div class="route-detail">
+                <span class="route-icon">📏</span>
+                <span class="route-label">Distance</span>
+                <span class="route-value">${pathDistance.toFixed(0)} meters</span>
+            </div>
+            <div class="route-detail">
+                <span class="route-icon">⏱</span>
+                <span class="route-label">Estimated Walking Time</span>
+                <span class="route-value">${walkingTime} minutes</span>
+            </div>
+        </div>
+    `;
+
+}
+
+// ===========================================
+// NOTE: Junction markers and the junction editor
+// toolbox are only rendered via the editor add-on
+// below (Editor Mode / Show Junctions toggles), so
+// only building pins are visible by default. The
+// underlying `junctions` and `roadGraph` data above
+// is what powers the Dijkstra routing.
+// ===========================================
+
+// ===========================================
+// DARK MODE
+// ===========================================
+
+let darkMode = false;
+
+function injectDarkModeStyles() {
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        body.dark-mode {
+            background:#0f1115;
+        }
+
+        body.dark-mode #gpsPanel {
+            background:#1c1f26 !important;
+            color:#eee !important;
+            box-shadow:0 4px 14px rgba(0,0,0,0.55) !important;
+        }
+
+        body.dark-mode #gpsPanel:hover {
+            background:#252932 !important;
+        }
+
+        body.dark-mode #darkModeToggleBtn {
+            background:#1c1f26 !important;
+            color:#f2f2f2 !important;
+            border:1px solid #333844 !important;
+        }
+
+        body.dark-mode select,
+        body.dark-mode #source,
+        body.dark-mode #destination {
+            background:#1c1f26 !important;
+            color:#f2f2f2 !important;
+            border:1px solid #333844 !important;
+        }
+
+        body.dark-mode button {
+            background:#242833 !important;
+            color:#f2f2f2 !important;
+            border:1px solid #333844 !important;
+        }
+
+        body.dark-mode button:hover {
+            background:#2f3542 !important;
+        }
+
+        body.dark-mode #result {
+            background:#1c1f26 !important;
+            color:#eee !important;
+            box-shadow:0 4px 14px rgba(0,0,0,0.5) !important;
+        }
+
+        body.dark-mode .route-box {
+            background:#20232b !important;
+        }
+
+        body.dark-mode .route-detail {
+            border-bottom:1px solid #2c2f38 !important;
+        }
+
+        body.dark-mode .route-label {
+            color:#9aa3b2 !important;
+        }
+
+        body.dark-mode .route-value {
+            color:#f2f2f2 !important;
+        }
+
+        body.dark-mode .leaflet-popup-content-wrapper,
+        body.dark-mode .leaflet-popup-tip {
+            background:#1c1f26 !important;
+            color:#eee !important;
+        }
+
+        body.dark-mode .leaflet-control-zoom a {
+            background:#1c1f26 !important;
+            color:#f2f2f2 !important;
+            border-color:#333844 !important;
+        }
+    `;
+
+    document.head.appendChild(style);
+
+}
+
+function toggleDarkMode() {
+
+    darkMode = !darkMode;
+
+    if (darkMode) {
+        map.removeLayer(lightTileLayer);
+        darkTileLayer.addTo(map);
+        document.body.classList.add("dark-mode");
+    } else {
+        map.removeLayer(darkTileLayer);
+        lightTileLayer.addTo(map);
+        document.body.classList.remove("dark-mode");
+    }
+
+}
+
+// ===========================================
+// GPS LOCATION
+// ===========================================
+
+let userLocationMarker = null;
+
+function locateUser() {
+
+    if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser.");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+
+        (position) => {
+
+            const { latitude, longitude } = position.coords;
+
+            if (userLocationMarker) {
+                map.removeLayer(userLocationMarker);
+            }
+
+            userLocationMarker = L.marker([latitude, longitude], {
+                icon: L.divIcon({
+                    className: "user-location-icon",
+                    html: `<div style="
+                        width:16px;height:16px;border-radius:50%;
+                        background:#1a73e8;border:3px solid white;
+                        box-shadow:0 0 0 2px #1a73e8;
+                    "></div>`,
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8]
+                })
+            }).addTo(map).bindPopup("You are here");
+
+            map.setView([latitude, longitude], 19);
+
+        },
+
+        (error) => {
+            alert("Unable to retrieve your location: " + error.message);
+        },
+
+        { enableHighAccuracy: true }
+
+    );
+
+}
+
+function buildGpsPanel() {
+
+    const panel = document.createElement("div");
+    panel.id = "gpsPanel";
+
+    panel.style.position = "fixed";
+    panel.style.bottom = "20px";
+    panel.style.right = "12px";
+    panel.style.zIndex = "99999";
+    panel.style.background = "white";
+    panel.style.borderRadius = "50%";
+    panel.style.boxShadow = "0 2px 8px rgba(0,0,0,0.35)";
+    panel.style.cursor = "pointer";
+    panel.style.fontSize = "22px";
+    panel.style.width = "44px";
+    panel.style.height = "44px";
+    panel.style.display = "flex";
+    panel.style.alignItems = "center";
+    panel.style.justifyContent = "center";
+    panel.title = "Find my location";
+    panel.textContent = "📍";
+
+    panel.addEventListener("click", locateUser);
+
+    document.body.appendChild(panel);
+
+}
+
+// ===========================================
+// INTERFACE POLISH
+// ===========================================
+
+function injectInterfacePolishStyles() {
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        #map {
+            border-radius: 10px;
+        }
+
+        #source,
+        #destination {
+            font-size: 16px !important;
+            padding: 12px 14px !important;
+            min-height: 46px;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        #darkModeToggleBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 68px;
+            z-index: 99999;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #darkModeToggleBtn:hover {
+            filter: brightness(0.95);
+        }
+
+        #gpsPanel:hover {
+            filter: brightness(0.97);
+        }
+    `;
+
+    document.head.appendChild(style);
+
+}
+
+// ===========================================
+// DARK MODE TOGGLE (floating button)
+// ===========================================
+
+function buildDarkModeToggle() {
+
+    const btn = document.createElement("button");
+    btn.id = "darkModeToggleBtn";
+    btn.title = "Toggle dark mode";
+    btn.textContent = "🌙";
+
+    btn.addEventListener("click", () => {
+        toggleDarkMode();
+        btn.textContent = darkMode ? "☀️" : "🌙";
+    });
+
+    document.body.appendChild(btn);
+
+}
+
+injectDarkModeStyles();
+injectInterfacePolishStyles();
+buildGpsPanel();
+buildDarkModeToggle();
+
+// ===========================================
+// VNRVJIET Smart Campus Navigator — Editor Add-on
+// ===========================================
+// Adds UI to create new junctions and building
+// markers, plus a "Show all junctions" toggle.
+// Wrapped in its own IIFE so it cannot collide
+// with or overwrite anything defined above —
+// it only reads/extends `map`, `buildings`,
+// `junctions`, `roadGraph`, `buildingToRoad`,
+// and `getBuildingIcon` from the code above.
+// ===========================================
+
+(function () {
+    "use strict";
+
+    // ---- Guard: make sure the main script has loaded first ----
+    if (typeof map === "undefined" || typeof buildings === "undefined" ||
+        typeof junctions === "undefined" || typeof roadGraph === "undefined" ||
+        typeof buildingToRoad === "undefined" || typeof getBuildingIcon === "undefined") {
+        console.error("Editor add-on: main navigator code not found above this block.");
+        return;
+    }
+
+    const dropdownSource = document.getElementById("source");
+    const dropdownDestination = document.getElementById("destination");
+
+    // ---------------------------------------
+    // State
+    // ---------------------------------------
+    let editorMode = false;
+    let showJunctions = false;
+    let addMode = null;
+    let linkingJunctionId = null;
+
+    const junctionMarkerLayer = L.layerGroup();
+    const junctionMarkers = {};
+    const buildingMarkers = {};
+
+    // ---------------------------------------
+    // Helpers
+    // ---------------------------------------
+
+    function haversineMeters(latlngA, latlngB) {
+        const lat1 = latlngA[0] * Math.PI / 180;
+        const lon1 = latlngA[1] * Math.PI / 180;
+        const lat2 = latlngB[0] * Math.PI / 180;
+        const lon2 = latlngB[1] * Math.PI / 180;
+        const dLat = lat2 - lat1;
+        const dLon = lon2 - lon1;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return 6371000 * c;
+    }
+
+    function nextJunctionId() {
+        let n = 1;
+        while (junctions["J" + n]) n++;
+        return "J" + n;
+    }
+
+    function nearestJunctionId(latlng) {
+        let bestId = null;
+        let bestDist = Infinity;
+        for (let id in junctions) {
+            const d = haversineMeters(latlng, junctions[id]);
+            if (d < bestDist) {
+                bestDist = d;
+                bestId = id;
+            }
+        }
+        return { id: bestId, distance: bestDist };
+    }
+
+    function refreshBuildingDropdowns(newName) {
+        [dropdownSource, dropdownDestination].forEach(sel => {
+            if (!sel) return;
+            const opt = document.createElement("option");
+            opt.value = newName;
+            opt.textContent = newName;
+            sel.appendChild(opt);
+        });
+    }
+
+    // ---------------------------------------
+    // Building markers as name labels instead of icons
+    // ---------------------------------------
+
+    function typeColor(type) {
+        switch (type) {
+            case "gate": return "#22c55e";
+            case "academic": return "#2563eb";
+            case "canteen": return "#f97316";
+            case "sports": return "#eab308";
+            case "admin": return "#8b5cf6";
+            case "parking": return "#64748b";
+            case "pg": return "#ec4899";
+            default: return "#ef4444";
+        }
+    }
+
+    function injectLabelStyles() {
+        if (document.getElementById("campusLabelStyles")) return;
+
+        const style = document.createElement("style");
+        style.id = "campusLabelStyles";
+        style.textContent = `
+            .campus-building-label {
+                display: inline-block;
+                background: white;
+                color: #1f2430;
+                padding: 4px 10px;
+                border-radius: 14px;
+                font-size: 12px;
+                font-weight: 600;
+                white-space: nowrap;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+                transform: translate(-50%, -130%);
+                cursor: pointer;
+            }
+            body.dark-mode .campus-building-label {
+                background: #1c1f26;
+                color: #f2f2f2;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.55);
+            }
+            .campus-junction-label {
+                display: inline-block;
+                background: #eef6fd;
+                color: #0c4a6e;
+                padding: 2px 8px;
+                border-radius: 10px;
+                font-size: 10px;
+                font-weight: 700;
+                white-space: nowrap;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                transform: translate(-50%, -50%);
+                cursor: pointer;
+            }
+            body.dark-mode .campus-junction-label {
+                background: #16324a;
+                color: #cfe8ff;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.55);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function buildingLabelIcon(name, type) {
+        const color = typeColor(type);
+        return L.divIcon({
+            className: "",
+            html: `<div class="campus-building-label" style="border-left:4px solid ${color};">${name}</div>`,
+            iconSize: [1, 1],
+            iconAnchor: [0, 0]
+        });
+    }
+
+    function scanExistingBuildingMarkers() {
+        map.eachLayer(layer => {
+            if (!(layer instanceof L.Marker)) return;
+            const latlng = layer.getLatLng();
+            for (let name in buildings) {
+                const b = buildings[name];
+                if (Math.abs(latlng.lat - b.coords[0]) < 1e-9 &&
+                    Math.abs(latlng.lng - b.coords[1]) < 1e-9) {
+                    layer.setIcon(buildingLabelIcon(name, b.type));
+                    trackBuildingMarker(name, layer);
+                    break;
+                }
+            }
+        });
+    }
+
+    function trackBuildingMarker(name, marker) {
+        buildingMarkers[name] = marker;
+
+        if (!marker._editorDragBound) {
+            marker._editorDragBound = true;
+            marker.on("dragend", () => {
+                const pos = marker.getLatLng();
+                buildings[name].coords = [pos.lat, pos.lng];
+
+                const nearest = nearestJunctionId([pos.lat, pos.lng]);
+                buildingToRoad[name] = nearest.id;
+
+                marker.setPopupContent(`<b>${name}</b><br>${buildings[name].info}`);
+            });
+        }
+    }
+
+    function setBuildingMarkersDraggable(enable) {
+        for (let name in buildingMarkers) {
+            const marker = buildingMarkers[name];
+            if (marker && marker.dragging) {
+                if (enable) marker.dragging.enable();
+                else marker.dragging.disable();
+            }
+        }
+    }
+
+    // ---------------------------------------
+    // Save / Load (Export as JSON file / Import from JSON file)
+    // ---------------------------------------
+
+    function exportMapData() {
+        const data = {
+            buildings: buildings,
+            junctions: junctions,
+            roadGraph: roadGraph,
+            buildingToRoad: buildingToRoad
+        };
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "campus-map-data.json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    function clearObjectKeys(obj) {
+        for (let k in obj) delete obj[k];
+    }
+
+    function rebuildBuildingMarkersFromData() {
+        for (let name in buildingMarkers) {
+            map.removeLayer(buildingMarkers[name]);
+            delete buildingMarkers[name];
+        }
+
+        for (let name in buildings) {
+            const b = buildings[name];
+            const marker = L.marker(b.coords, { icon: buildingLabelIcon(name, b.type) })
+                .addTo(map)
+                .bindPopup(`<b>${name}</b><br>${b.info}`);
+            trackBuildingMarker(name, marker);
+            if (editorMode) marker.dragging.enable();
+        }
+    }
+
+    function rebuildDropdowns() {
+        if (dropdownSource) dropdownSource.innerHTML = "";
+        if (dropdownDestination) dropdownDestination.innerHTML = "";
+
+        for (let name in buildings) {
+            refreshBuildingDropdowns(name);
+        }
+
+        if (dropdownSource) dropdownSource.selectedIndex = 0;
+        if (dropdownDestination) {
+            dropdownDestination.selectedIndex = Object.keys(buildings).length > 1 ? 1 : 0;
+        }
+    }
+
+    function importMapData(jsonText) {
+        let data;
+        try {
+            data = JSON.parse(jsonText);
+        } catch (err) {
+            alert("That file isn't valid JSON.");
+            return;
+        }
+
+        if (!data.buildings || !data.junctions || !data.roadGraph || !data.buildingToRoad) {
+            alert("This JSON file is missing required fields (buildings, junctions, roadGraph, buildingToRoad).");
+            return;
+        }
+
+        clearObjectKeys(buildings);
+        Object.assign(buildings, data.buildings);
+
+        clearObjectKeys(junctions);
+        Object.assign(junctions, data.junctions);
+
+        clearObjectKeys(roadGraph);
+        Object.assign(roadGraph, data.roadGraph);
+
+        clearObjectKeys(buildingToRoad);
+        Object.assign(buildingToRoad, data.buildingToRoad);
+
+        rebuildBuildingMarkersFromData();
+        rebuildDropdowns();
+
+        linkingJunctionId = null;
+        syncJunctionLayerVisibility();
+
+        alert("Map data imported successfully.");
+    }
+
+    // ---------------------------------------
+    // Junction marker rendering
+    // ---------------------------------------
+
+    function junctionIcon(id, highlighted) {
+        const color = highlighted ? "#f59e0b" : "#0ea5e9";
+        return L.divIcon({
+            className: "",
+            html: `<div class="campus-junction-label" style="border-left:4px solid ${color};">${id}</div>`,
+            iconSize: [1, 1],
+            iconAnchor: [0, 0]
+        });
+    }
+
+    function renderJunctionMarkers() {
+        junctionMarkerLayer.clearLayers();
+        for (let id in junctionMarkers) delete junctionMarkers[id];
+
+        for (let id in junctions) {
+            const marker = L.marker(junctions[id], {
+                icon: junctionIcon(id, id === linkingJunctionId),
+                draggable: editorMode
+            });
+
+            marker.on("click", () => onJunctionMarkerClick(id));
+
+            marker.on("dragend", () => {
+                const pos = marker.getLatLng();
+                junctions[id] = [pos.lat, pos.lng];
+            });
+
+            marker.addTo(junctionMarkerLayer);
+            junctionMarkers[id] = marker;
+        }
+    }
+
+    function onJunctionMarkerClick(id) {
+        if (!linkingJunctionId || linkingJunctionId === id) return;
+
+        if (!roadGraph[linkingJunctionId].includes(id)) {
+            roadGraph[linkingJunctionId].push(id);
+        }
+        if (!roadGraph[id].includes(linkingJunctionId)) {
+            roadGraph[id].push(linkingJunctionId);
+        }
+
+        renderJunctionMarkers();
+    }
+
+    // ---------------------------------------
+    // Add Junction flow
+    // ---------------------------------------
+
+    function handleMapClickForJunction(e) {
+        const suggestedId = nextJunctionId();
+        const id = window.prompt("New junction ID:", suggestedId);
+        if (!id) return;
+
+        if (junctions[id]) {
+            alert(`Junction "${id}" already exists. Choose a different ID.`);
+            return;
+        }
+
+        junctions[id] = [e.latlng.lat, e.latlng.lng];
+        roadGraph[id] = [];
+
+        linkingJunctionId = id;
+        renderJunctionMarkers();
+        showFinishLinkingButton();
+
+        alert(
+            `Junction "${id}" created.\n` +
+            `Now click the other blue dots to connect roads to it, ` +
+            `then press "Finish Linking".`
+        );
+
+        exitAddMode();
+    }
+
+    function showFinishLinkingButton() {
+        if (document.getElementById("finishLinkingBtn")) return;
+
+        const btn = document.createElement("button");
+        btn.id = "finishLinkingBtn";
+        btn.textContent = "Finish Linking";
+        styleButton(btn);
+
+        btn.addEventListener("click", () => {
+            linkingJunctionId = null;
+            renderJunctionMarkers();
+            btn.remove();
+        });
+
+        editorPanel.appendChild(btn);
+    }
+
+    // ---------------------------------------
+    // Add Building flow
+    // ---------------------------------------
+
+    const VALID_TYPES = ["academic", "gate", "canteen", "sports", "admin", "parking", "pg", "other"];
+
+    function handleMapClickForBuilding(e) {
+        const name = window.prompt("New building name:");
+        if (!name) return;
+
+        if (buildings[name]) {
+            alert(`A building named "${name}" already exists.`);
+            return;
+        }
+
+        let type = window.prompt(`Building type (${VALID_TYPES.join(", ")}):`, "academic");
+        if (!type || !VALID_TYPES.includes(type)) type = "other";
+
+        const info = window.prompt("Short description (optional):", "") || name;
+
+        const nearest = nearestJunctionId([e.latlng.lat, e.latlng.lng]);
+        let roadId = window.prompt(
+            `Nearest junction detected: ${nearest.id} (${nearest.distance.toFixed(0)}m away).\n` +
+            `Press OK to accept, or type a different junction ID:`,
+            nearest.id
+        );
+        if (!roadId || !junctions[roadId]) {
+            roadId = nearest.id;
+        }
+
+        buildings[name] = {
+            coords: [e.latlng.lat, e.latlng.lng],
+            info: info,
+            type: type
+        };
+        buildingToRoad[name] = roadId;
+
+        const newMarker = L.marker(buildings[name].coords, { icon: buildingLabelIcon(name, type) })
+            .addTo(map)
+            .bindPopup(`<b>${name}</b><br>${info}`);
+        trackBuildingMarker(name, newMarker);
+        if (editorMode) newMarker.dragging.enable();
+
+        refreshBuildingDropdowns(name);
+        exitAddMode();
+        alert(`Building "${name}" added and linked to ${roadId}.`);
+    }
+
+    // ---------------------------------------
+    // Mode control
+    // ---------------------------------------
+
+    function exitAddMode() {
+        addMode = null;
+        map.getContainer().style.cursor = "";
+        updateModeButtonsUI();
+    }
+
+    function setAddMode(mode) {
+        addMode = (addMode === mode) ? null : mode;
+        map.getContainer().style.cursor = addMode ? "crosshair" : "";
+        updateModeButtonsUI();
+    }
+
+    map.on("click", function (e) {
+        if (addMode === "junction") handleMapClickForJunction(e);
+        else if (addMode === "building") handleMapClickForBuilding(e);
+    });
+
+    function syncJunctionLayerVisibility() {
+        const shouldShow = editorMode || showJunctions;
+        if (shouldShow) {
+            renderJunctionMarkers();
+            junctionMarkerLayer.addTo(map);
+        } else {
+            map.removeLayer(junctionMarkerLayer);
+        }
+    }
+
+    // ---------------------------------------
+    // UI
+    // ---------------------------------------
+
+    let editorPanel, editorToggleBtn, showJunctionsBtn, addJunctionBtn, addBuildingBtn;
+
+    function styleButton(btn) {
+        btn.style.padding = "10px 14px";
+        btn.style.borderRadius = "22px";
+        btn.style.border = "none";
+        btn.style.background = "white";
+        btn.style.color = "#1f2430";
+        btn.style.fontFamily = "inherit";
+        btn.style.boxShadow = "0 2px 8px rgba(0,0,0,0.35)";
+        btn.style.cursor = "pointer";
+        btn.style.fontSize = "14px";
+        btn.style.fontWeight = "600";
+        btn.style.whiteSpace = "nowrap";
+    }
+
+    function buildEditorUI() {
+        editorPanel = document.createElement("div");
+        editorPanel.id = "editorPanel";
+        editorPanel.style.position = "fixed";
+        editorPanel.style.bottom = "20px";
+        editorPanel.style.left = "12px";
+        editorPanel.style.zIndex = "99999";
+        editorPanel.style.display = "flex";
+        editorPanel.style.gap = "10px";
+        editorPanel.style.flexWrap = "wrap";
+        editorPanel.style.maxWidth = "90vw";
+
+        editorToggleBtn = document.createElement("button");
+        editorToggleBtn.id = "editorToggleBtn";
+        editorToggleBtn.textContent = "Editor Mode: Off";
+        styleButton(editorToggleBtn);
+
+        addJunctionBtn = document.createElement("button");
+        addJunctionBtn.id = "addJunctionBtn";
+        addJunctionBtn.textContent = "Add Junction";
+        styleButton(addJunctionBtn);
+        addJunctionBtn.style.display = "none";
+
+        addBuildingBtn = document.createElement("button");
+        addBuildingBtn.id = "addBuildingBtn";
+        addBuildingBtn.textContent = "Add Building";
+        styleButton(addBuildingBtn);
+        addBuildingBtn.style.display = "none";
+
+        editorToggleBtn.addEventListener("click", () => {
+            editorMode = !editorMode;
+            editorToggleBtn.textContent = editorMode ? "Editor Mode: On" : "Editor Mode: Off";
+
+            if (editorMode) {
+                addJunctionBtn.style.display = "inline-block";
+                addBuildingBtn.style.display = "inline-block";
+            } else {
+                addJunctionBtn.style.display = "none";
+                addBuildingBtn.style.display = "none";
+                addMode = null;
+                linkingJunctionId = null;
+                map.getContainer().style.cursor = "";
+                const finishBtn = document.getElementById("finishLinkingBtn");
+                if (finishBtn) finishBtn.remove();
+            }
+
+            setBuildingMarkersDraggable(editorMode);
+            syncJunctionLayerVisibility();
+        });
+
+        showJunctionsBtn = document.createElement("button");
+        showJunctionsBtn.id = "showJunctionsBtn";
+        showJunctionsBtn.textContent = "Show Junctions: Off";
+        styleButton(showJunctionsBtn);
+
+        showJunctionsBtn.addEventListener("click", () => {
+            showJunctions = !showJunctions;
+            showJunctionsBtn.textContent = showJunctions ? "Show Junctions: On" : "Show Junctions: Off";
+            syncJunctionLayerVisibility();
+        });
+
+        addJunctionBtn.addEventListener("click", () => setAddMode("junction"));
+        addBuildingBtn.addEventListener("click", () => setAddMode("building"));
+
+        const exportBtn = document.createElement("button");
+        exportBtn.id = "exportMapBtn";
+        exportBtn.textContent = "Export Map";
+        styleButton(exportBtn);
+        exportBtn.addEventListener("click", exportMapData);
+
+        const importBtn = document.createElement("button");
+        importBtn.id = "importMapBtn";
+        importBtn.textContent = "Import Map";
+        styleButton(importBtn);
+
+        const importFileInput = document.createElement("input");
+        importFileInput.type = "file";
+        importFileInput.accept = "application/json";
+        importFileInput.style.display = "none";
+
+        importBtn.addEventListener("click", () => importFileInput.click());
+
+        importFileInput.addEventListener("change", () => {
+            const file = importFileInput.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = () => importMapData(reader.result);
+            reader.readAsText(file);
+
+            importFileInput.value = "";
+        });
+
+        editorPanel.appendChild(editorToggleBtn);
+        editorPanel.appendChild(showJunctionsBtn);
+        editorPanel.appendChild(addJunctionBtn);
+        editorPanel.appendChild(addBuildingBtn);
+        editorPanel.appendChild(exportBtn);
+        editorPanel.appendChild(importBtn);
+        editorPanel.appendChild(importFileInput);
+        document.body.appendChild(editorPanel);
+    }
+
+    function updateModeButtonsUI() {
+        addJunctionBtn.style.outline = addMode === "junction" ? "3px solid #0b8f47" : "none";
+        addBuildingBtn.style.outline = addMode === "building" ? "3px solid #0b8f47" : "none";
+    }
+
+    buildEditorUI();
+    injectLabelStyles();
+    scanExistingBuildingMarkers();
+
+    
+    //zoom effect//
+
+    function updateBuildingLabels() {
+
+    const showLabels = map.getZoom() >= 19;
+
+    document.querySelectorAll(".campus-building-label").forEach(label => {
+        label.style.display = showLabels ? "inline-block" : "none";
+    });
+
+}
+
+})();

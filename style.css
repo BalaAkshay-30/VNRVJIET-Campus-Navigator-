@@ -1,0 +1,146 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+}
+
+body {
+    background: #eef4f7;
+}
+
+/* Header */
+
+header {
+    background: linear-gradient(135deg, #0b8f47, #006633);
+    color: white;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0px 3px 10px rgba(0,0,0,.2);
+}
+
+header h1{
+    font-size:32px;
+}
+
+/* Controls */
+
+.controls{
+    width:95%;
+    margin:20px auto;
+    display:flex;
+    justify-content:center;
+    align-items:flex-end;
+    gap:25px;
+    flex-wrap:nowrap;
+}
+
+.control-box{
+    display:flex;
+    flex-direction:column;
+    min-width:280px;
+}
+.control-box label{
+    margin-bottom:8px;
+    font-weight:bold;
+    color:#333;
+}
+
+select{
+    width:220px;
+    padding:12px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    font-size:15px;
+}
+
+button{
+    padding:12px 25px;
+    border:none;
+    border-radius:8px;
+    background:#0b8f47;
+    color:white;
+    cursor:pointer;
+    font-size:16px;
+    transition:.3s;
+}
+
+button:hover{
+    background:#066633;
+    transform:translateY(-2px);
+}
+
+/* Map */
+
+#map{
+    width:95%;
+    height:600px;
+    margin:auto;
+    border-radius:15px;
+    overflow:hidden;
+    box-shadow:0 5px 20px rgba(0,0,0,.15);
+}
+
+/* Route Info */
+
+.info-panel{
+    width:95%;
+    margin:20px auto;
+    background:white;
+    border-radius:15px;
+    padding:20px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+}
+
+#result h2{
+    color:#0b8f47;
+    margin-bottom:10px;
+}
+
+#result{
+    font-size:18px;
+    line-height:1.8;
+}
+
+/* Popup */
+
+.leaflet-popup-content{
+    font-size:15px;
+    line-height:1.6;
+}
+
+.route-box{
+    margin-top:15px;
+    padding:15px;
+    background:#e8f8ee;
+    border-left:6px solid #0b8f47;
+    border-radius:8px;
+}
+
+/* Mobile */
+
+@media(max-width:768px){
+
+.controls{
+    flex-direction:column;
+    align-items:center;
+}
+
+.control-box{
+    width:100%;
+}
+
+select{
+    width:100%;
+}
+
+button{
+    width:100%;
+}
+
+#map{
+    height:450px;
+}
+
+}
+/* test */

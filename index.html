@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>VNRVJIET Smart Campus Navigator</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <!-- Icons -->
+    <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
+</head>
+
+<body>
+
+<header>
+
+<h1>
+
+<i class="fa-solid fa-location-dot"></i>
+
+VNRVJIET Smart Campus Navigator
+
+</h1>
+
+<p>Shortest Path Navigation inside VNRVJIET Campus</p>
+
+</header>
+
+
+<section class="controls">
+
+<div class="control-box">
+
+<label>
+
+<i class="fa-solid fa-person-walking"></i>
+
+Source
+
+</label>
+
+<select id="source"></select>
+
+</div>
+
+
+<div class="control-box">
+
+<label>
+
+<i class="fa-solid fa-flag-checkered"></i>
+
+Destination
+
+</label>
+
+<select id="destination"></select>
+
+</div>
+
+
+<button onclick="findRoute()">
+    <i class="fa-solid fa-route"></i>
+    Find Route
+</button>
+
+</section>
+
+
+<div id="map"></div>
+
+
+<section class="info-panel">
+
+<div id="result">
+
+<h2>Navigation Information</h2>
+
+<p>
+
+Select a source and destination.
+
+</p>
+
+</div>
+
+</section>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="script.js"></script>
+<script src="script.js"></script>
+<script src="script.js"></script>
+</body>
+
+</html>

@@ -54,6 +54,15 @@ select{
     font-size:15px;
 }
 
+#source,
+#destination {
+    font-size: 16px;
+    padding: 12px 14px;
+    min-height: 46px;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
 button{
     padding:12px 25px;
     border:none;
@@ -117,6 +126,40 @@ button:hover{
     border-radius:8px;
 }
 
+/* GPS locate button (floating, bottom-right of map) */
+
+#gpsPanel {
+    position: fixed;
+    bottom: 20px;
+    right: 12px;
+    z-index: 99999;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    cursor: pointer;
+    font-size: 22px;
+}
+
+#gpsPanel:hover {
+    filter: brightness(0.97);
+}
+
+/* "You are here" marker dot */
+
+.user-location-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #1a73e8;
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px #1a73e8;
+}
+
 /* Mobile */
 
 @media(max-width:768px){
@@ -144,7 +187,7 @@ button{
 
 }
 /* test */
-.building-label {
+.campus-building-label {
 
     background: rgba(255,255,255,0.95);
     border: none;
@@ -160,6 +203,6 @@ button{
 
 }
 
-.building-label::before{
+.campus-building-label::before{
     display:none;
 }

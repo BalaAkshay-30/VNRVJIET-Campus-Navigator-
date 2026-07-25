@@ -13,11 +13,6 @@ const lightTileLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{
     maxZoom: 22
 }).addTo(map);
 
-const darkTileLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-    attribution: "&copy; OpenStreetMap Contributors &copy; CARTO",
-    maxZoom: 22
-});
-
 // ==========================
 // Buildings
 // ==========================
@@ -102,27 +97,27 @@ const buildings = {
     },
     "Mens Basketball Court": {
         "coords": [17.538626486219894, 78.38527324496515],
-        "info": "Mens Basketball Court",
+        "info": "Outdoor basketball court",
         "type": "sports"
     },
     "Play ground ": {
         "coords": [17.53962050782601, 78.38545280575003],
-        "info": "Play ground ",
+        "info": "Open playground for sports and events",
         "type": "sports"
     },
     "Student Parking": {
         "coords": [17.540203619134296, 78.38584444201008],
-        "info": "Student Parking",
+        "info": "Parking area for students",
         "type": "parking"
     },
     "PEB Block": {
         "coords": [17.540786728566868, 78.38642921396007],
-        "info": "PEB Block",
+        "info": "PEB (Physical Education Block) academic building",
         "type": "academic"
     },
     "Library": {
         "coords": [17.538171246398676, 78.3848816253459],
-        "info": "Library",
+        "info": "Central library",
         "type": "academic"
     }
 };
@@ -245,17 +240,17 @@ const buildingZoom = {
     "E Block": 17,
     "Library": 17,
     "Admin Block": 18,
-    "Management Block": 18,
-    "PEB Block": 18,
+    "Management Block": 17,
+    "PEB Block": 17,
     "Canteen": 18,
-    "Sports Complex": 18,
+    "Sports Complex": 17,
     "Bus Parking": 19,
-    "Student Parking": 19,
-    "Main Gate": 19,
-    "Play ground": 19,
-    "Mens Basketball Court": 19,
-    "Rattaiah Square": 20,
-    "Panda Punaiah Square": 20
+    "Student Parking": 18,
+    "Main Gate": 17,
+    "Play ground": 18,
+    "Mens Basketball Court": 18,
+    "Rattaiah Square": 19,
+    "Panda Punaiah Square": 19
 };
 
 // ==========================
@@ -272,13 +267,22 @@ const invisibleMarkerIcon = L.divIcon({
     iconAnchor: [0, 0]
 });
 
+// To add or edit the info shown for a building, just edit its "info"
+// field in the `buildings` object above — e.g.
+//   "Library": { "coords": [...], "info": "Central library, open 8am-8pm", "type": "academic" }
+// Multiple lines are supported: use "\n" inside the string and it will
+// be rendered as separate lines in the popup, e.g. "Line one\nLine two".
 for (let place in buildings) {
+
+    const infoHTML = (buildings[place].info || "")
+        .split("\n")
+        .join("<br>");
 
     L.marker(buildings[place].coords, {
         icon: invisibleMarkerIcon
     })
         .addTo(map)
-        .bindPopup(`<b>${place}</b><br>${buildings[place].info}`);
+        .bindPopup(`<b>${place}</b><br>${infoHTML}`);
 
 }
 
@@ -514,110 +518,6 @@ function findRoute() {
 // ===========================================
 
 // ===========================================
-// DARK MODE
-// ===========================================
-
-let darkMode = false;
-
-function injectDarkModeStyles() {
-
-    const style = document.createElement("style");
-
-    style.textContent = `
-        body.dark-mode {
-            background:#0f1115;
-        }
-
-        body.dark-mode #gpsPanel {
-            background:#1c1f26 !important;
-            color:#eee !important;
-            box-shadow:0 4px 14px rgba(0,0,0,0.55) !important;
-        }
-
-        body.dark-mode #gpsPanel:hover {
-            background:#252932 !important;
-        }
-
-        body.dark-mode #darkModeToggleBtn {
-            background:#1c1f26 !important;
-            color:#f2f2f2 !important;
-            border:1px solid #333844 !important;
-        }
-
-        body.dark-mode select,
-        body.dark-mode #source,
-        body.dark-mode #destination {
-            background:#1c1f26 !important;
-            color:#f2f2f2 !important;
-            border:1px solid #333844 !important;
-        }
-
-        body.dark-mode button {
-            background:#242833 !important;
-            color:#f2f2f2 !important;
-            border:1px solid #333844 !important;
-        }
-
-        body.dark-mode button:hover {
-            background:#2f3542 !important;
-        }
-
-        body.dark-mode #result {
-            background:#1c1f26 !important;
-            color:#eee !important;
-            box-shadow:0 4px 14px rgba(0,0,0,0.5) !important;
-        }
-
-        body.dark-mode .route-box {
-            background:#20232b !important;
-        }
-
-        body.dark-mode .route-detail {
-            border-bottom:1px solid #2c2f38 !important;
-        }
-
-        body.dark-mode .route-label {
-            color:#9aa3b2 !important;
-        }
-
-        body.dark-mode .route-value {
-            color:#f2f2f2 !important;
-        }
-
-        body.dark-mode .leaflet-popup-content-wrapper,
-        body.dark-mode .leaflet-popup-tip {
-            background:#1c1f26 !important;
-            color:#eee !important;
-        }
-
-        body.dark-mode .leaflet-control-zoom a {
-            background:#1c1f26 !important;
-            color:#f2f2f2 !important;
-            border-color:#333844 !important;
-        }
-    `;
-
-    document.head.appendChild(style);
-
-}
-
-function toggleDarkMode() {
-
-    darkMode = !darkMode;
-
-    if (darkMode) {
-        map.removeLayer(lightTileLayer);
-        darkTileLayer.addTo(map);
-        document.body.classList.add("dark-mode");
-    } else {
-        map.removeLayer(darkTileLayer);
-        lightTileLayer.addTo(map);
-        document.body.classList.remove("dark-mode");
-    }
-
-}
-
-// ===========================================
 // GPS LOCATION
 // ===========================================
 
@@ -642,12 +542,8 @@ function locateUser() {
 
             userLocationMarker = L.marker([latitude, longitude], {
                 icon: L.divIcon({
-                    className: "user-location-icon",
-                    html: `<div style="
-                        width:16px;height:16px;border-radius:50%;
-                        background:#1a73e8;border:3px solid white;
-                        box-shadow:0 0 0 2px #1a73e8;
-                    "></div>`,
+                    className: "user-location-dot",
+                    html: "",
                     iconSize: [16, 16],
                     iconAnchor: [8, 8]
                 })
@@ -671,21 +567,6 @@ function buildGpsPanel() {
 
     const panel = document.createElement("div");
     panel.id = "gpsPanel";
-
-    panel.style.position = "fixed";
-    panel.style.bottom = "20px";
-    panel.style.right = "12px";
-    panel.style.zIndex = "99999";
-    panel.style.background = "white";
-    panel.style.borderRadius = "50%";
-    panel.style.boxShadow = "0 2px 8px rgba(0,0,0,0.35)";
-    panel.style.cursor = "pointer";
-    panel.style.fontSize = "22px";
-    panel.style.width = "44px";
-    panel.style.height = "44px";
-    panel.style.display = "flex";
-    panel.style.alignItems = "center";
-    panel.style.justifyContent = "center";
     panel.title = "Find my location";
     panel.textContent = "📍";
 
@@ -695,113 +576,15 @@ function buildGpsPanel() {
 
 }
 
-// ===========================================
-// INTERFACE POLISH
-// ===========================================
-
-function injectInterfacePolishStyles() {
-
-    const style = document.createElement("style");
-
-    style.textContent = `
-        #map {
-            border-radius: 10px;
-        }
-
-        #source,
-        #destination {
-            font-size: 16px !important;
-            padding: 12px 14px !important;
-            min-height: 46px;
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
-
-        #darkModeToggleBtn {
-            position: fixed;
-            bottom: 20px;
-            right: 68px;
-            z-index: 99999;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            border: none;
-            background: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-            cursor: pointer;
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #darkModeToggleBtn:hover {
-            filter: brightness(0.95);
-        }
-
-        #gpsPanel:hover {
-            filter: brightness(0.97);
-        }
-    `;
-
-    document.head.appendChild(style);
-
-}
-
-// ===========================================
-// DARK MODE TOGGLE (floating button)
-// ===========================================
-
-function buildDarkModeToggle() {
-
-    const btn = document.createElement("button");
-    btn.id = "darkModeToggleBtn";
-    btn.title = "Toggle dark mode";
-    btn.textContent = "🌙";
-
-    btn.addEventListener("click", () => {
-        toggleDarkMode();
-        btn.textContent = darkMode ? "☀️" : "🌙";
-    });
-
-    document.body.appendChild(btn);
-
-}
-
-injectDarkModeStyles();
-injectInterfacePolishStyles();
 buildGpsPanel();
-buildDarkModeToggle();
 
 // ===========================================
 // BUILDING NAME LABELS
 // (display-only — Leaflet tooltips, shown/hidden
-// per building based on buildingZoom thresholds)
+// per building based on buildingZoom thresholds.
+// Visual styling for .campus-building-label lives
+// in style.css, not here.)
 // ===========================================
-
-function injectLabelStyles() {
-    if (document.getElementById("campusLabelStyles")) return;
-
-    const style = document.createElement("style");
-    style.id = "campusLabelStyles";
-    style.textContent = `
-        .campus-building-label {
-            background: white;
-            color: #1f2430;
-            padding: 4px 10px;
-            border-radius: 14px;
-            font-size: 12px;
-            font-weight: 600;
-            white-space: nowrap;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-            border: none;
-        }
-        .campus-building-label::before {
-            display: none;
-        }
-    `;
-    document.head.appendChild(style);
-}
 
 function bindBuildingTooltips() {
     map.eachLayer(layer => {
@@ -841,7 +624,6 @@ function updateLabels() {
     });
 }
 
-injectLabelStyles();
 bindBuildingTooltips();
 updateLabels();
 map.on("zoomend", updateLabels);

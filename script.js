@@ -48,37 +48,44 @@ const buildings = {
     "Admin Block": {
         "coords": [17.536506073141094, 78.38491052364165],
         "info": "Administrative Block",
-        "type": "academic"
+        "type": "academic",
+        "departments": ["Examination Branch, Academic Section,\n Administrative Offices, Student Records."]
     },
     "A Block": {
         "coords": [17.53737329519014, 78.38481725071168],
         "info": "Academic Block A",
-        "type": "academic"
+        "type": "academic",
+        "departments": ["Information Technology (IT)", "Electronics & Instrumentation Engineering (EIE)"]
     },
     "B Block": {
         "coords": [17.537672527304895, 78.3848494460025],
         "info": "Academic Block B",
-        "type": "academic"
+        "type": "academic",
+        "departments": ["Electronics & Communication Engineering (ECE)", "Student Service Centre (Ground Floor)"]
     },
     "C Block": {
         "coords": [17.537915493188617, 78.38506401555891],
         "info": "Academic Block C",
-        "type": "academic"
+        "type": "academic",
+        "departments": ["Library, Electrical & Electronics Engineering (EEE), Seminar Halls, Auditoriu"]
     },
     "Canteen": {
         "coords": [17.538365085908858, 78.38479484963928],
         "info": "Student Canteen",
-        "type": "canteen"
+        "type": "canteen",
+        "departments": []
     },
     "E Block": {
         "coords": [17.5372, 78.38535],
         "info": "CSE Departments",
-        "type": "academic"
+        "type": "academic",
+        "departments": ["Computer Science & Engineering (CSE),\n CSE (AI & ML,IOT and Robotics & AI)\n, CSE (Cyber Security,Data Science)and  AI & DS,\nComputer Science & Business Systems (CSBS)"]
     },
     "D Block": {
         "coords": [17.53665302604159, 78.3850534160283],
-        "info": "Civil, Mechanical & Automobile",
-        "type": "academic"
+        "info": "D Block",
+        "type": "academic",
+        departments: ["Civil Engineering (CE)", "Mechanical Engineering (ME)", "Automobile Engineering (AE)"]
     },
     "PG Block": {
         "coords": [17.536855498746466, 78.38434211839447],
@@ -257,7 +264,9 @@ const buildingZoom = {
 // Add Building Markers
 // (no default/Font Awesome icon — the marker is
 // just an invisible anchor point; only the name
-// label tooltip added further down is visible)
+// label tooltip added further down is visible.
+// Clicking a marker opens the side panel instead
+// of a popup — see openBuildingPanel below.)
 // ==========================
 
 const invisibleMarkerIcon = L.divIcon({
@@ -267,25 +276,50 @@ const invisibleMarkerIcon = L.divIcon({
     iconAnchor: [0, 0]
 });
 
-// To add or edit the info shown for a building, just edit its "info"
-// field in the `buildings` object above — e.g.
-//   "Library": { "coords": [...], "info": "Central library, open 8am-8pm", "type": "academic" }
-// Multiple lines are supported: use "\n" inside the string and it will
-// be rendered as separate lines in the popup, e.g. "Line one\nLine two".
-for (let place in buildings) {
+const panel = document.getElementById("buildingPanel");
+const panelContent = document.getElementById("buildingPanelContent");
+function openBuildingPanel(place) {
 
-    const infoHTML = (buildings[place].info || "")
-        .split("\n")
-        .join("<br>");
+    const b = buildings[place];
+
+    let deptHTML = "";
+    if (b.departments) {
+        const deptList = b.departments.split("\n");
+        deptHTML = `
+            <div class="dept-list">
+                <h3>Departments</h3>
+                <ul>${deptList.map(d => `<li>${d}</li>`).join("")}</ul>
+            </div>
+        `;
+    }
+
+    panelContent.innerHTML = `
+        <h2>${place}</h2>
+        <span class="building-type">${b.type}</span>
+        <p>${(b.info || "").split("\n").join("<br>")}</p>
+        ${deptHTML}
+    `;
+
+    panel.classList.add("open");
+
+}
+
+document.getElementById("closePanelBtn").addEventListener("click", () => {
+    panel.classList.remove("open");
+});
+
+// To add or edit the info shown for a building, edit its "info" field
+// in the `buildings` object above, and its "departments" array for the
+// department list (e.g. "departments": ["Civil Engineering", "Mechanical"]).
+for (let place in buildings) {
 
     L.marker(buildings[place].coords, {
         icon: invisibleMarkerIcon
     })
         .addTo(map)
-        .bindPopup(`<b>${place}</b><br>${infoHTML}`);
+        .on("click", () => openBuildingPanel(place));
 
 }
-
 // ==========================
 // Populate Dropdowns
 // ==========================

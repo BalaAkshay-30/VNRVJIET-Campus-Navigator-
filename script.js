@@ -29,12 +29,12 @@ const buildings = {
         "type": "parking"
     },
     "Sports Complex": {
-        "coords": [17.54058042393002, 78.38565410940035],
+        "coords": [17.540565078951516, 78.38550126599561],
         "info": "Indoor Sports Complex",
         "type": "sports"
     },
     "Management Block": {
-        "coords": [17.54110726740397, 78.38602427828117],
+        "coords": [17.541176319590452, 78.38578027199335],
         "info": "Management Block",
         "type": "academic"
     },
@@ -57,7 +57,7 @@ const buildings = {
         "departments": ["Electronics & Communication Engineering (ECE)", "Student Service Centre (Ground Floor)"]
     },
     "C Block": {
-        "coords": [17.537915493188617, 78.38506401555891],
+        "coords": [17.53802035204838, 78.38493265103432],
         "info": "Academic Block C",
         "type": "academic",
         "departments": ["Library, Electrical & Electronics Engineering (EEE), Seminar Halls, Auditorium"]
@@ -90,12 +90,12 @@ const buildings = {
         "type": "other"
     },
     "Panda Punaiah Square": {
-        "coords": [17.537956413726477, 78.38505866084803],
+        "coords": [17.537989661656685, 78.38476909445174],
         "info": "Hangout spot",
         "type": "other"
     },
     "Mens Basketball Court": {
-        "coords": [17.538626486219894, 78.38527324496515],
+        "coords": [17.53868275173641, 78.38497291945137],
         "info": "Outdoor basketball court",
         "type": "sports"
     },
@@ -115,7 +115,7 @@ const buildings = {
         "type": "academic"
     },
     "Library": {
-        "coords": [17.538171246398676, 78.3848816253459],
+        "coords": [17.538212166878786, 78.38490320680962],
         "info": "Central library",
         "type": "academic"
     }

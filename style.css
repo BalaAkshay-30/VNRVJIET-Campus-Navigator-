@@ -12,6 +12,7 @@ body{
 }
 header {
     position: relative;
+    padding-left: 90px; /* makes room for the logo so text doesn't overlap it */
 }
 
 .site-logo {
@@ -20,18 +21,26 @@ header {
     left: 16px;
     height: 100px;
     width: 100px;
-    border-radius: 12px;
+    border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0,0,0,.25);
 }
 
 @media(max-width:768px){
+
+    header {
+        padding-left: 0;
+        padding-top: 70px; /* pushes h1/p down below the logo instead of beside it */
+    }
+
     .site-logo {
-        height: 40px;
-        width: 40px;
-        top: 8px;
-        left: 10px;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%); /* centers the logo above the title on mobile */
+        height: 60x;
+        width: 60px;
         border-radius: 8px;
     }
+
 }
 
 /* Header */

@@ -16,13 +16,6 @@ const lightTileLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{
 // ==========================
 // Buildings
 // ==========================
-// FIX: these four `const` declarations used to be wrapped in a stray
-// `{ ... }` block. That turns them into block-scoped bindings that vanish
-// as soon as the block ends — every later reference to `buildings`,
-// `junctions`, `roadGraph`, and `buildingToRoad` (findRoute, dijkstra,
-// the editor IIFE, etc.) would throw "ReferenceError: buildings is not
-// defined". The wrapping braces have been removed so these stay in
-// module/global scope for the rest of the script.
 
 const buildings = {
     "Main Gate": {
@@ -67,25 +60,24 @@ const buildings = {
         "coords": [17.537915493188617, 78.38506401555891],
         "info": "Academic Block C",
         "type": "academic",
-        "departments": ["Library, Electrical & Electronics Engineering (EEE), Seminar Halls, Auditoriu"]
+        "departments": ["Library, Electrical & Electronics Engineering (EEE), Seminar Halls, Auditorium"]
     },
     "Canteen": {
         "coords": [17.538365085908858, 78.38479484963928],
         "info": "Student Canteen",
-        "type": "canteen",
-        "departments": []
+        "type": "canteen"
     },
     "E Block": {
         "coords": [17.5372, 78.38535],
         "info": "CSE Departments",
         "type": "academic",
-        "departments": ["Computer Science & Engineering (CSE),\n CSE (AI & ML,IOT and Robotics & AI)\n, CSE (Cyber Security,Data Science)and  AI & DS,\nComputer Science & Business Systems (CSBS)"]
+        "departments": ["Computer Science & Engineering (CSE),\n CSE (AI & ML, IOT and Robotics & AI)\n, CSE (Cyber Security, Data Science) and AI & DS,\nComputer Science & Business Systems (CSBS)"]
     },
     "D Block": {
         "coords": [17.53665302604159, 78.3850534160283],
         "info": "D Block",
         "type": "academic",
-        departments: ["Civil Engineering (CE)", "Mechanical Engineering (ME)", "Automobile Engineering (AE)"]
+        "departments": ["Civil Engineering (CE)", "Mechanical Engineering (ME)", "Automobile Engineering (AE)"]
     },
     "PG Block": {
         "coords": [17.536855498746466, 78.38434211839447],
@@ -154,15 +146,6 @@ const junctions = {
     "J22": [17.53671430081176, 78.38474866636656]
 };
 
-// FIX (confirmed against the campus map images): the green route on the
-// map runs continuously Library(J16) -> C Block -> B Block(J17) ->
-// A Block(J18) -> Silicon Bhavan(J19) -> PG Block(J20) -> Admin/D
-// Block(J22), but the graph was missing the J17<->J18 and J18<->J19
-// links, which is exactly why the J19/J20/J21/J22 cluster was
-// unreachable from the rest of campus. Both edges are added below.
-// J21 still has no edges and isn't referenced by any building or
-// visible on the maps, so it's left disconnected as-is.
-
 const roadGraph = {
     "J1": ["J2", "J4"],
     "J2": ["J1", "J3"],
@@ -173,7 +156,7 @@ const roadGraph = {
     "J7": ["J6", "J8"],
     "J8": ["J6", "J9"],
     "J9": ["J3", "J8", "J10"],
-    "J10": ["J3","J9", "J11"],
+    "J10": ["J3", "J9", "J11"],
     "J11": ["J10", "J12"],
     "J12": ["J11", "J13"],
     "J13": ["J12", "J14"],
@@ -183,40 +166,11 @@ const roadGraph = {
     "J17": ["J16", "J18"],
     "J18": ["J17", "J19"],
     "J19": ["J18", "J20", "J22"],
-    "J20": ["J19","J21"],
+    "J20": ["J19", "J21"],
     "J21": ["J20"],
     "J22": ["J19"]
 };
 
-// FIX: two keys here didn't match the corresponding `buildings` keys, so
-// selecting either building as source/destination made
-// `buildingToRoad[source]` come back `undefined`, which then crashed
-// findRoute() (e.g. `junctions[undefined]` / dijkstra with an undefined
-// start node):
-//   - "PEB BLock"  -> corrected to "PEB Block"  (matches buildings key)
-//   - "Library "   -> corrected to "Library"    (matches buildings key,
-//                      no trailing space)
-//
-// FIX (checked against the campus map images): several buildings were
-// pointing at a junction nowhere near their actual pin on the map —
-// corrected to the nearest junction shown in the images:
-//   - Management Block: J5  -> J4  (J4 sits right on the building; J5 is
-//                                    off toward PEB Block)
-//   - PG Block:         J16 -> J20 (J16 is by the Library, far away)
-//   - Admin Block:      J17 -> J22 (J17 is by B Block; J22 is the
-//                                    Admin/D Block/Civil Workshop cluster)
-//   - D Block:           J17 -> J22 (same cluster as Admin Block)
-//   - B Block:            J18 -> J17 (J17 is the junction right next to
-//                                    B Block; J18 belongs to A Block)
-//   - Canteen:            J12 -> J16 (J12 is up by the bus stop; Canteen
-//                                    sits next to the Library)
-//   - Bus Parking:        J10 -> J13 (J10 is the bus-stop cluster; J13
-//                                    sits right above the Bus Parking pin)
-//   - E Block:            J14 -> J18 (best estimate — E Block sits in the
-//                                    same row as A Block/Instrumentation
-//                                    Workshop, not near the institute gate
-//                                    where J14 is; lower confidence than
-//                                    the others, worth a visual double-check)
 const buildingToRoad = {
     "Main Gate": "J1",
     "Sports Complex": "J8",
@@ -261,30 +215,54 @@ const buildingZoom = {
 };
 
 // ==========================
-// Add Building Markers
-// (no default/Font Awesome icon — the marker is
-// just an invisible anchor point; only the name
-// label tooltip added further down is visible.
-// Clicking a marker opens the side panel instead
-// of a popup — see openBuildingPanel below.)
+// Building Info Panel
 // ==========================
 
 const invisibleMarkerIcon = L.divIcon({
     className: "",
     html: "",
-    iconSize: [1, 1],
-    iconAnchor: [0, 0]
+    iconSize: [50, 50],
+    iconAnchor: [25, 40]
 });
+
+// Small colored dot icon shown for every building, color-coded by type.
+function getBuildingMarkerIcon(type) {
+    const typeClass = {
+        academic: "building-marker-academic",
+        parking: "building-marker-parking",
+        sports: "building-marker-sports",
+        canteen: "building-marker-canteen",
+        gate: "building-marker-gate"
+    }[type] || "building-marker-other";
+
+    return L.divIcon({
+        className: "",
+        html: `<div class="building-marker-dot ${typeClass}"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+    });
+}
 
 const panel = document.getElementById("buildingPanel");
 const panelContent = document.getElementById("buildingPanelContent");
+
+// b.departments can be a single string ("dept1\ndept2"), an array of
+// strings, or missing entirely — this normalizes all three into one
+// flat array of trimmed, non-empty department names.
+function getDepartmentList(departments) {
+    if (!departments) return [];
+    const arr = Array.isArray(departments) ? departments : [departments];
+    return arr.flatMap(d => d.split("\n").map(s => s.trim()).filter(Boolean));
+}
+
 function openBuildingPanel(place) {
 
     const b = buildings[place];
+    if (!b) return;
 
+    const deptList = getDepartmentList(b.departments);
     let deptHTML = "";
-    if (b.departments) {
-        const deptList = b.departments.split("\n");
+    if (deptList.length) {
         deptHTML = `
             <div class="dept-list">
                 <h3>Departments</h3>
@@ -302,24 +280,61 @@ function openBuildingPanel(place) {
 
     panel.classList.add("open");
 
+    // The panel opening can resize/shrink the map container (if it's
+    // pushing the map rather than floating over it). Leaflet caches
+    // its container size, so it needs to be told to re-measure once
+    // the CSS transition finishes, or markers/labels outside the old
+    // bounds appear to vanish. Match 300 to your panel's actual
+    // transition-duration in CSS.
+    setTimeout(() => map.invalidateSize(), 300);
+
 }
 
 document.getElementById("closePanelBtn").addEventListener("click", () => {
     panel.classList.remove("open");
+    setTimeout(() => map.invalidateSize(), 300);
 });
-
 // To add or edit the info shown for a building, edit its "info" field
-// in the `buildings` object above, and its "departments" array for the
-// department list (e.g. "departments": ["Civil Engineering", "Mechanical"]).
+// in the `buildings` object above. For departments, use either a
+// "dept1\ndept2" string or an array of strings — both work.
+//
+// Each marker gets an invisible hit area (see invisibleMarkerIcon) AND
+// a name tooltip. The tooltip's onclick is embedded directly in its
+// HTML content so tapping the visible label text opens the panel too,
+// independent of Leaflet's own tooltip show/hide behavior.
+//
+// A second, non-interactive marker (a small colored dot) is added on
+// top purely for visibility — it doesn't affect the tooltip/click
+// logic on the invisible marker above it.
 for (let place in buildings) {
 
-    L.marker(buildings[place].coords, {
+    const marker = L.marker(buildings[place].coords, {
         icon: invisibleMarkerIcon
-    })
-        .addTo(map)
-        .on("click", () => openBuildingPanel(place));
+    }).addTo(map);
+
+    marker.buildingName = place;
+
+    marker.bindTooltip(
+        `<span class="label-text" onclick="openBuildingPanel('${place.replace(/'/g, "\\'")}')">${place.trim()}</span>`,
+        {
+            permanent: false,
+            direction: "top",
+            className: "campus-building-label",
+            offset: [0, -28],
+            interactive: true
+        }
+    );
+
+    marker.on("click", () => openBuildingPanel(place));
+
+    // Purely visual dot marking the building's exact position.
+    L.marker(buildings[place].coords, {
+        icon: getBuildingMarkerIcon(buildings[place].type),
+        interactive: false
+    }).addTo(map);
 
 }
+
 // ==========================
 // Populate Dropdowns
 // ==========================
@@ -452,6 +467,23 @@ validateRoadGraph();
 // ===========================================
 
 let routeLine = null;
+let startMarker = null;
+let destMarker = null;
+
+// Pin + text-label icon used for the route's start/destination markers.
+function getEndpointIcon(kind, label) {
+    return L.divIcon({
+        className: "",
+        html: `
+            <div class="route-endpoint-marker">
+                <div class="route-endpoint-pin ${kind}"></div>
+                <div class="route-endpoint-label">${label}</div>
+            </div>
+        `,
+        iconSize: [120, 50],
+        iconAnchor: [9, 16]
+    });
+}
 
 function findRoute() {
 
@@ -504,6 +536,19 @@ function findRoute() {
         opacity: 0.9
     }).addTo(map);
 
+    if (startMarker) map.removeLayer(startMarker);
+    if (destMarker) map.removeLayer(destMarker);
+
+    startMarker = L.marker(buildings[source].coords, {
+        icon: getEndpointIcon("start", "Start: " + source),
+        interactive: false
+    }).addTo(map);
+
+    destMarker = L.marker(buildings[destination].coords, {
+        icon: getEndpointIcon("destination", "Destination: " + destination),
+        interactive: false
+    }).addTo(map);
+
     map.fitBounds(routeLine.getBounds(), {
         padding: [40, 40]
     });
@@ -522,11 +567,6 @@ function findRoute() {
                 <span class="route-icon">🎯</span>
                 <span class="route-label">Destination</span>
                 <span class="route-value">${destination}</span>
-            </div>
-            <div class="route-detail">
-                <span class="route-icon">🧭</span>
-                <span class="route-label">Route</span>
-                <span class="route-value">${pathForDisplay.join(" ➜ ")}</span>
             </div>
             <div class="route-detail">
                 <span class="route-icon">📏</span>
@@ -599,14 +639,14 @@ function locateUser() {
 
 function buildGpsPanel() {
 
-    const panel = document.createElement("div");
-    panel.id = "gpsPanel";
-    panel.title = "Find my location";
-    panel.textContent = "📍";
+    const gpsPanel = document.createElement("div");
+    gpsPanel.id = "gpsPanel";
+    gpsPanel.title = "Find my location";
+    gpsPanel.textContent = "📍";
 
-    panel.addEventListener("click", locateUser);
+    gpsPanel.addEventListener("click", locateUser);
 
-    document.body.appendChild(panel);
+    document.body.appendChild(gpsPanel);
 
 }
 
@@ -616,29 +656,12 @@ buildGpsPanel();
 // BUILDING NAME LABELS
 // (display-only — Leaflet tooltips, shown/hidden
 // per building based on buildingZoom thresholds.
+// Tooltip binding itself now happens in the marker
+// creation loop above, since the onclick needs to
+// be baked into the tooltip content at bind time.
 // Visual styling for .campus-building-label lives
 // in style.css, not here.)
 // ===========================================
-
-function bindBuildingTooltips() {
-    map.eachLayer(layer => {
-        if (!(layer instanceof L.Marker)) return;
-        const latlng = layer.getLatLng();
-        for (let name in buildings) {
-            const b = buildings[name];
-            if (Math.abs(latlng.lat - b.coords[0]) < 1e-9 &&
-                Math.abs(latlng.lng - b.coords[1]) < 1e-9) {
-                layer.bindTooltip(name, {
-                    permanent: false,
-                    direction: "top",
-                    className: "campus-building-label",
-                    offset: [0, -28]
-                });
-                break;
-            }
-        }
-    });
-}
 
 function updateLabels() {
     const zoom = map.getZoom();
@@ -649,7 +672,7 @@ function updateLabels() {
         // buildingZoom keys don't carry the trailing spaces some
         // `buildings` names have ("Play ground ", "Rattaiah Square "),
         // so trim before lookup or those two never match.
-        const building = tooltip.getContent().trim();
+        const building = (layer.buildingName || "").trim();
         if (zoom >= buildingZoom[building]) {
             layer.openTooltip();
         } else {
@@ -658,6 +681,5 @@ function updateLabels() {
     });
 }
 
-bindBuildingTooltips();
 updateLabels();
 map.on("zoomend", updateLabels);

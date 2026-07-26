@@ -28,17 +28,17 @@ header {
 @media(max-width:768px){
 
     header {
-        padding-left: 0;
-        padding-top: 100px; /* increased to match the bigger logo below */
+        padding-left: 90px; /* room for the logo sitting in the corner */
+        padding-top: 0;
     }
 
     .site-logo {
-        top: 12px;
-        left: 50%;
-        transform: translateX(-50%);
+        top: 10px;
+        left: 12px;
         height: 72px;
         width: 72px;
         border-radius: 10px;
+        transform: none; /* removes the centering from before */
     }
 
 }

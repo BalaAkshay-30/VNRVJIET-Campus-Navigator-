@@ -29,16 +29,16 @@ header {
 
     header {
         padding-left: 0;
-        padding-top: 70px; /* pushes h1/p down below the logo instead of beside it */
+        padding-top: 100px; /* increased to match the bigger logo below */
     }
 
     .site-logo {
-        top: 10px;
+        top: 12px;
         left: 50%;
-        transform: translateX(-50%); /* centers the logo above the title on mobile */
-        height: 60x;
-        width: 60px;
-        border-radius: 8px;
+        transform: translateX(-50%);
+        height: 72px;
+        width: 72px;
+        border-radius: 10px;
     }
 
 }
